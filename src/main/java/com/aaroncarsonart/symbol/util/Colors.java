@@ -1,4 +1,4 @@
-package com.aaroncarsonart.symbol;
+package com.aaroncarsonart.symbol.util;
 
 import java.awt.Color;
 

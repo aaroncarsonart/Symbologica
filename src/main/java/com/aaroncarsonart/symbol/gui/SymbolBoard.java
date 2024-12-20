@@ -1,4 +1,8 @@
-package com.aaroncarsonart.symbol;
+package com.aaroncarsonart.symbol.gui;
+
+import com.aaroncarsonart.symbol.game.Symbol;
+import com.aaroncarsonart.symbol.util.Colors;
+import com.aaroncarsonart.symbol.util.Position;
 
 import javax.swing.JPanel;
 import java.awt.Dimension;
@@ -29,6 +33,8 @@ public class SymbolBoard extends JPanel {
     private int fontWidth;
     private int fontAscent;
 
+    private Position gameCursor;
+
     public SymbolBoard(int width, int height, int fontSize) {
         this.gridWidth = width;
         this.gridHeight = height;
@@ -57,6 +63,8 @@ public class SymbolBoard extends JPanel {
                 setSymbol(x, y, nextSymbol);
             }
         }
+
+        this.gameCursor = new Position(0, 0);
     }
 
     @Override
@@ -81,6 +89,14 @@ public class SymbolBoard extends JPanel {
                 g.drawString(symbol.sprite + "", tx, ty);
             }
         }
+
+        int cx = gameCursor.x() * (tileSize + 2) + 1;
+        int cy = gameCursor.y() * (tileSize + 2) + 1;
+        int cw = tileSize + 2;
+        int ch = cw;
+
+        g.setColor(Colors.WHITE);
+        g.drawRect(cx, cy, cw, ch);
     }
 
     public void setSymbol(int x, int y, Symbol symbol) {
@@ -89,5 +105,17 @@ public class SymbolBoard extends JPanel {
 
     public Symbol getSymbol(int x, int y) {
         return this.symbols[y][x];
+    }
+
+    public boolean withinBounds(Position p) {
+        return 0 <= p.x() && p.x() < gridWidth && 0 <= p.y() && p.y() <gridHeight;
+    }
+
+    public Position getGameCursor() {
+        return gameCursor;
+    }
+
+    public void setGameCursor(Position gameCursor) {
+        this.gameCursor = gameCursor;
     }
 }
