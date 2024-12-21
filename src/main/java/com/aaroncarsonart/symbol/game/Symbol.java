@@ -7,14 +7,14 @@ import java.awt.Color;
 /**
  * The set of symbols that can be played with in Symbologica.
  */
-public enum Symbol {
-    RED('R', Colors.RED, Colors.RED_DARK),
-    ORANGE('O', Colors.ORANGE, Colors.ORANGE_DARK),
-    YELLOW('Y', Colors.YELLOW, Colors.YELLOW_DARK),
-    GREEN('G', Colors.GREEN, Colors.GREEN_DARK),
-    BLUE('B', Colors.BLUE, Colors.BLUE_DARK),
-    PURPLE('P', Colors.PURPLE, Colors.PURPLE_DARK),
-    GREY('E', Colors.GREY, Colors.GREY_DARK),
+public enum Symbol { // ΩΔβΦΨΣΛ
+    SIGMA('Σ', Colors.RED, Colors.RED_DARK),
+    BETA('β', Colors.ORANGE, Colors.ORANGE_DARK),
+    OMEGA('Ω', Colors.YELLOW, Colors.YELLOW_DARK),
+    PSI('Ψ', Colors.GREEN, Colors.GREEN_DARK),
+    LAMBDA('Λ', Colors.BLUE, Colors.BLUE_DARK),
+    DELTA('Δ', Colors.PURPLE, Colors.PURPLE_DARK),
+    PHI('Φ', Colors.GREY, Colors.GREY_DARK),
     EMPTY(' ', Colors.GREY_DARK, Colors.GREY_DARK);
 
     public final char sprite;

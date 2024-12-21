@@ -18,8 +18,8 @@ public class Colors {
     public static final Color GREEN = new Color(0, 255, 0);
     public static final Color GREEN_DARK = new Color(0, 64, 0);
 
-    public static final Color BLUE = new Color(0, 0, 255);
-    public static final Color BLUE_DARK = new Color (0, 0, 64);
+    public static final Color BLUE = new Color(0, 96, 255);
+    public static final Color BLUE_DARK = new Color (0, 32, 64);
 
     public static final Color PURPLE = new Color(255, 0, 255);
     public static final Color PURPLE_DARK = new Color (64, 0, 64);
