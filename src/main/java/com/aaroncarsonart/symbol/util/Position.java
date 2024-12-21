@@ -20,4 +20,15 @@ public record Position(int x, int y) {
     public String toString() {
         return ("Position(" + x + ", " + y + ")");
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (obj instanceof Position p) {
+            return this.x == p.x && this.y == p.y;
+        }
+        return false;
+    }
 }

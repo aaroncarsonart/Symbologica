@@ -34,6 +34,7 @@ public class SymbolBoard extends JPanel {
     private int fontAscent;
 
     private Position gameCursor;
+    private SymbolMouseListener mouseListener;
 
     public SymbolBoard(int width, int height, int fontSize) {
         this.gridWidth = width;
@@ -65,6 +66,8 @@ public class SymbolBoard extends JPanel {
         }
 
         this.gameCursor = new Position(0, 0);
+        this.mouseListener = new SymbolMouseListener(this);
+        this.addMouseMotionListener(this.mouseListener);
     }
 
     @Override
@@ -116,6 +119,26 @@ public class SymbolBoard extends JPanel {
     }
 
     public void setGameCursor(Position gameCursor) {
-        this.gameCursor = gameCursor;
+        if (this.gameCursor != gameCursor) {
+            this.gameCursor = gameCursor;
+        }
+    }
+
+    public void setGameCursor(int mouseX, int mouseY) {
+        int width = widthPx - 2;
+        int height = heightPx - 2;
+        int x = mouseX - 1;
+        int y = mouseY - 1;
+
+        if (x == -1) x = 0;
+        if (x == width) x = width - 1;
+        if (y == -1) y = 0;
+        if (y == height) y = height - 2;
+
+        int cx = x / (tileSize + 2);
+        int cy = y / (tileSize + 2);
+
+        Position cursor = new Position(cx, cy);
+        setGameCursor(cursor);
     }
 }

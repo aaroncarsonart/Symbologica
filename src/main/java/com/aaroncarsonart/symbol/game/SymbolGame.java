@@ -57,7 +57,6 @@ public class SymbolGame {
 
         if (symbolBoard.withinBounds(newCursorTarget)) {
             symbolBoard.setGameCursor(newCursorTarget);
-            System.out.println("Move cursor to " + newCursorTarget);
             updated = true;
         }
     }
