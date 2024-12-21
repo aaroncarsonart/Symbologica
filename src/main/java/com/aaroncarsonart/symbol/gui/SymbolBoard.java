@@ -42,6 +42,9 @@ public class SymbolBoard extends JPanel {
     private int fillGridSleepMillis;
     private boolean pauseInput;
 
+    private Position selectedTile;
+    private Position swapTarget;
+
     public SymbolBoard(int width, int height, int fontSize) {
         this.gridWidth = width;
         this.gridHeight = height;
@@ -62,6 +65,7 @@ public class SymbolBoard extends JPanel {
 
         this.gameCursor = new Position(0, 0);
         this.mouseListener = new SymbolMouseListener(this);
+        this.addMouseListener(this.mouseListener);
         this.addMouseMotionListener(this.mouseListener);
 
         for (int x = 0; x < gridWidth; x++) {
@@ -172,10 +176,26 @@ public class SymbolBoard extends JPanel {
             g.setColor(Colors.WHITE);
             g.drawRect(cx, cy, cw, ch);
         }
+
+        // Paint the selected tile.
+        if (selectedTile != null) {
+            int sx = selectedTile.x() * (tileSize + 2) + 2;
+            int sy = selectedTile.y() * (tileSize + 2) + 2;
+            int sw = tileSize;
+            int sh = sw;
+
+            Symbol symbol = getSymbol(selectedTile);
+            g.setColor(symbol.fg);
+            g.drawRect(sx, sy, sw, sh);
+        }
     }
 
     public void setSymbol(int x, int y, Symbol symbol) {
         this.symbols[y][x] = symbol;
+    }
+
+    public void setSymbol(Position p, Symbol symbol) {
+        setSymbol(p.x(), p.y(), symbol);
     }
 
     public Symbol getSymbol(int x, int y) {
@@ -220,5 +240,30 @@ public class SymbolBoard extends JPanel {
 
     public boolean isInputPaused() {
         return pauseInput;
+    }
+
+    public Position getSelectedTile() {
+        return selectedTile;
+    }
+
+    public void setSelectedTile(Position selectedTile) {
+        this.selectedTile = selectedTile;
+    }
+
+    public void setSwapTarget(Position swapTarget) {
+        this.swapTarget = swapTarget;
+    }
+
+    public void performSwap() {
+        Symbol symbol1 = getSymbol(selectedTile);
+        Symbol symbol2 = getSymbol(swapTarget);
+
+        setSymbol(selectedTile, symbol2);
+        setSymbol(swapTarget, symbol1);
+
+        selectedTile = null;
+        swapTarget = null;
+
+        repaint();
     }
 }
