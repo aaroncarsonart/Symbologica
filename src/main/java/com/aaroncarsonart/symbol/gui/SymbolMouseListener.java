@@ -1,5 +1,7 @@
 package com.aaroncarsonart.symbol.gui;
 
+import com.aaroncarsonart.symbol.game.Input;
+import com.aaroncarsonart.symbol.game.SymbolCommand;
 import com.aaroncarsonart.symbol.util.Position;
 
 import java.awt.Point;
@@ -12,11 +14,12 @@ import java.awt.event.MouseMotionListener;
  */
 public class SymbolMouseListener implements MouseListener, MouseMotionListener {
     private SymbolBoard symbolBoard;
+    private Input input;
 
-    public SymbolMouseListener(SymbolBoard symbolBoard) {
+    public SymbolMouseListener(SymbolBoard symbolBoard, Input input) {
         this.symbolBoard = symbolBoard;
+        this.input = input;
     }
-
 
     @Override
     public void mouseClicked(MouseEvent e) {
@@ -29,17 +32,7 @@ public class SymbolMouseListener implements MouseListener, MouseMotionListener {
     @Override
     public void mouseReleased(MouseEvent e) {
         if (!symbolBoard.isInputPaused()) {
-            Position cursor = symbolBoard.getGameCursor();
-            Position selectedTile = symbolBoard.getSelectedTile();
-            if (selectedTile == null) {
-                symbolBoard.setSelectedTile(cursor);
-            } else if (cursor == selectedTile) {
-                symbolBoard.setSelectedTile(null);
-            } else {
-                symbolBoard.setSwapTarget(cursor);
-                symbolBoard.performSwap();
-            }
-            symbolBoard.repaint();
+            input.setCommand(SymbolCommand.SELECT_TILE);
         }
     }
 

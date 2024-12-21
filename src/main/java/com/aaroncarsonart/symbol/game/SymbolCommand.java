@@ -8,5 +8,6 @@ public enum SymbolCommand {
     MOVE_DOWN,
     MOVE_LEFT,
     MOVE_RIGHT,
+    SELECT_TILE,
     NONE;
 }

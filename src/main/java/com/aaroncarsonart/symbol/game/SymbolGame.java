@@ -10,14 +10,14 @@ import com.aaroncarsonart.symbol.util.Position;
  */
 public class SymbolGame {
     private SymbolBoard symbolBoard;
-    private SymbolKeyListener input;
+    private Input input;
     private int frameRate = 60;
     private int sleepMilliseconds = 1000 / frameRate;
     private boolean updated = false;
 
-    public SymbolGame(SymbolBoard symbolBoard, SymbolKeyListener input) {
+    public SymbolGame(SymbolBoard symbolBoard) {
         this.symbolBoard = symbolBoard;
-        this.input = input;
+        this.input = symbolBoard.getInput();
     }
 
     public void start() {
@@ -44,6 +44,7 @@ public class SymbolGame {
             case MOVE_DOWN -> tryMove(Direction.DOWN);
             case MOVE_LEFT -> tryMove(Direction.LEFT);
             case MOVE_RIGHT -> tryMove(Direction.RIGHT);
+            case SELECT_TILE -> symbolBoard.selectTile();
         }
 
         if (updated) {

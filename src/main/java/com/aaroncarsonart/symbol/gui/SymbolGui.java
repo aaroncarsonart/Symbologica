@@ -1,5 +1,6 @@
 package com.aaroncarsonart.symbol.gui;
 
+import com.aaroncarsonart.symbol.game.Input;
 import com.aaroncarsonart.symbol.game.SymbolGame;
 
 import javax.swing.JFrame;
@@ -20,10 +21,10 @@ public class SymbolGui extends JFrame {
         this.add(symbolBoard, BorderLayout.CENTER);
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-        this.keyListener = new SymbolKeyListener(symbolBoard);
+        this.keyListener = new SymbolKeyListener(symbolBoard, symbolBoard.getInput());
         this.addKeyListener(keyListener);
 
-        this.symbolGame = new SymbolGame(symbolBoard, keyListener);
+        this.symbolGame = new SymbolGame(symbolBoard);
     }
 
     public void display() {

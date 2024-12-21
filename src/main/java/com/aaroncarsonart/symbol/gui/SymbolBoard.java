@@ -1,5 +1,6 @@
 package com.aaroncarsonart.symbol.gui;
 
+import com.aaroncarsonart.symbol.game.Input;
 import com.aaroncarsonart.symbol.game.Symbol;
 import com.aaroncarsonart.symbol.util.Colors;
 import com.aaroncarsonart.symbol.util.Direction;
@@ -39,6 +40,7 @@ public class SymbolBoard extends JPanel {
 
     private Position gameCursor;
     private SymbolMouseListener mouseListener;
+    private Input input;
     private int fillGridSleepMillis;
     private boolean pauseInput;
 
@@ -64,7 +66,8 @@ public class SymbolBoard extends JPanel {
         this.setPreferredSize(dimensions);
 
         this.gameCursor = new Position(0, 0);
-        this.mouseListener = new SymbolMouseListener(this);
+        this.input = new Input();
+        this.mouseListener = new SymbolMouseListener(this, input);
         this.addMouseListener(this.mouseListener);
         this.addMouseMotionListener(this.mouseListener);
 
@@ -242,10 +245,6 @@ public class SymbolBoard extends JPanel {
         return pauseInput;
     }
 
-    public Position getSelectedTile() {
-        return selectedTile;
-    }
-
     public void setSelectedTile(Position selectedTile) {
         this.selectedTile = selectedTile;
     }
@@ -263,7 +262,21 @@ public class SymbolBoard extends JPanel {
 
         selectedTile = null;
         swapTarget = null;
+    }
 
+    public void selectTile() {
+        if (selectedTile == null) {
+            setSelectedTile(gameCursor);
+        } else if (gameCursor.equals(selectedTile)) {
+            setSelectedTile(null);
+        } else {
+            setSwapTarget(gameCursor);
+            performSwap();
+        }
         repaint();
+    }
+
+    public Input getInput() {
+        return input;
     }
 }
