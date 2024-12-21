@@ -20,7 +20,7 @@ public class SymbolGui extends JFrame {
         this.add(symbolBoard, BorderLayout.CENTER);
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-        this.keyListener = new SymbolKeyListener();
+        this.keyListener = new SymbolKeyListener(symbolBoard);
         this.addKeyListener(keyListener);
 
         this.symbolGame = new SymbolGame(symbolBoard, keyListener);

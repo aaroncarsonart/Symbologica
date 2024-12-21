@@ -39,6 +39,8 @@ public class SymbolBoard extends JPanel {
 
     private Position gameCursor;
     private SymbolMouseListener mouseListener;
+    private int fillGridSleepMillis;
+    private boolean pauseInput;
 
     public SymbolBoard(int width, int height, int fontSize) {
         this.gridWidth = width;
@@ -62,13 +64,25 @@ public class SymbolBoard extends JPanel {
         this.mouseListener = new SymbolMouseListener(this);
         this.addMouseMotionListener(this.mouseListener);
 
-        fillWithTiles();
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                this.symbols[y][x] = Symbol.EMPTY;
+            }
+        }
+
+        this.fillGridSleepMillis = 1000 / (gridWidth * gridHeight);
+        if (fillGridSleepMillis == 0) {
+            fillGridSleepMillis = 1;
+        }
     }
 
     /**
      * Fill the SymbolBoard with tiles. Ensure no two symbols are adjacent to one another.
+     * Animates the process by drawing one random tile at a time to the SymbolBoard.
      */
     public void fillWithTiles() {
+        pauseInput = true;
+
         List<Position> cells = new ArrayList<>();
         for (int x = 0; x < gridWidth; x++) {
             for (int y = 0; y < gridHeight; y++) {
@@ -91,7 +105,17 @@ public class SymbolBoard extends JPanel {
             int nextIndex = random.nextInt(availableSymbols.size() - 1);
             Symbol nextSymbol = availableSymbols.get(nextIndex);
             setSymbol(cell.x(), cell.y(), nextSymbol);
+
+            this.repaint();
+            try {
+                Thread.sleep(fillGridSleepMillis);
+            } catch (InterruptedException e) {
+                // Ignore.
+            }
         }
+
+        this.repaint();
+        pauseInput = false;
     }
 
     private List<Position> getNeighbors(Position p) {
@@ -116,6 +140,8 @@ public class SymbolBoard extends JPanel {
     @Override
     public void paint(Graphics graphics) {
         Graphics2D g = (Graphics2D) graphics;
+
+        // Paint the grid of tiles.
         g.setFont(font);
         g.setColor(Colors.BLACK);
         g.fillRect(0, 0, widthPx, heightPx);
@@ -136,13 +162,16 @@ public class SymbolBoard extends JPanel {
             }
         }
 
-        int cx = gameCursor.x() * (tileSize + 2) + 1;
-        int cy = gameCursor.y() * (tileSize + 2) + 1;
-        int cw = tileSize + 2;
-        int ch = cw;
+        // Paint the cursor.
+        if (!pauseInput) {
+            int cx = gameCursor.x() * (tileSize + 2) + 1;
+            int cy = gameCursor.y() * (tileSize + 2) + 1;
+            int cw = tileSize + 2;
+            int ch = cw;
 
-        g.setColor(Colors.WHITE);
-        g.drawRect(cx, cy, cw, ch);
+            g.setColor(Colors.WHITE);
+            g.drawRect(cx, cy, cw, ch);
+        }
     }
 
     public void setSymbol(int x, int y, Symbol symbol) {
@@ -187,5 +216,9 @@ public class SymbolBoard extends JPanel {
 
         Position cursor = new Position(cx, cy);
         setGameCursor(cursor);
+    }
+
+    public boolean isInputPaused() {
+        return pauseInput;
     }
 }

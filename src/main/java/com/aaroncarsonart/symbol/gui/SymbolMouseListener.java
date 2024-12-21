@@ -2,7 +2,6 @@ package com.aaroncarsonart.symbol.gui;
 
 import java.awt.Point;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 
 /**
@@ -21,10 +20,12 @@ public class SymbolMouseListener implements MouseMotionListener {
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        Point p = symbolBoard.getMousePosition();
-        if (p != null) {
-            symbolBoard.setGameCursor(p.x, p.y);
-            symbolBoard.repaint();
+        if (!symbolBoard.isInputPaused()) {
+            Point p = symbolBoard.getMousePosition();
+            if (p != null) {
+                symbolBoard.setGameCursor(p.x, p.y);
+                symbolBoard.repaint();
+            }
         }
     }
 }

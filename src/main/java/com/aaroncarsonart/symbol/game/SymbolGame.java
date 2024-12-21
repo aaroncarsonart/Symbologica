@@ -25,6 +25,7 @@ public class SymbolGame {
     }
 
     private void startGameLoop() {
+        symbolBoard.fillWithTiles();
         while (true) {
             gameLoop();
             try {

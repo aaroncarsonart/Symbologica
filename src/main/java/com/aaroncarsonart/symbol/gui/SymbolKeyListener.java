@@ -9,13 +9,15 @@ import java.awt.event.KeyListener;
  * Handles key input events for the game.
  */
 public class SymbolKeyListener implements KeyListener {
+    private SymbolBoard symbolBoard;
     private SymbolCommand command = SymbolCommand.NONE;
+
+    public SymbolKeyListener(SymbolBoard symbolBoard) {
+        this.symbolBoard = symbolBoard;
+    }
 
     public SymbolCommand getCommand() {
         SymbolCommand currentCommand = command;
-        if (currentCommand != SymbolCommand.NONE) {
-            System.out.println(currentCommand.name());
-        }
         command = SymbolCommand.NONE;
         return currentCommand;
     }
@@ -26,13 +28,16 @@ public class SymbolKeyListener implements KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
-        command = switch (e.getKeyCode()) {
-            case KeyEvent.VK_UP -> SymbolCommand.MOVE_UP;
-            case KeyEvent.VK_DOWN -> SymbolCommand.MOVE_DOWN;
-            case KeyEvent.VK_LEFT -> SymbolCommand.MOVE_LEFT;
-            case KeyEvent.VK_RIGHT -> SymbolCommand.MOVE_RIGHT;
-            default -> SymbolCommand.NONE;
-        };
+        if (!symbolBoard.isInputPaused()) {
+            command = switch (e.getKeyCode()) {
+                case KeyEvent.VK_UP -> SymbolCommand.MOVE_UP;
+                case KeyEvent.VK_DOWN -> SymbolCommand.MOVE_DOWN;
+                case KeyEvent.VK_LEFT -> SymbolCommand.MOVE_LEFT;
+                case KeyEvent.VK_RIGHT -> SymbolCommand.MOVE_RIGHT;
+                default -> SymbolCommand.NONE;
+            };
+        }
+
     }
 
     @Override
