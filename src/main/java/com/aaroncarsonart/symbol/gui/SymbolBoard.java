@@ -2,6 +2,7 @@ package com.aaroncarsonart.symbol.gui;
 
 import com.aaroncarsonart.symbol.game.Symbol;
 import com.aaroncarsonart.symbol.util.Colors;
+import com.aaroncarsonart.symbol.util.Direction;
 import com.aaroncarsonart.symbol.util.Position;
 
 import javax.swing.JPanel;
@@ -10,6 +11,9 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -54,20 +58,59 @@ public class SymbolBoard extends JPanel {
         this.dimensions = new Dimension(widthPx, heightPx);
         this.setPreferredSize(dimensions);
 
-        Random random = new Random();
-        Symbol[] allSymbols = Symbol.values();
-
-        for (int x = 0; x < gridWidth; x++) {
-            for (int y = 0; y < gridHeight; y++) {
-                int nextIndex = random.nextInt(allSymbols.length - 1);
-                Symbol nextSymbol = allSymbols[nextIndex];
-                setSymbol(x, y, nextSymbol);
-            }
-        }
-
         this.gameCursor = new Position(0, 0);
         this.mouseListener = new SymbolMouseListener(this);
         this.addMouseMotionListener(this.mouseListener);
+
+        fillWithTiles();
+    }
+
+    /**
+     * Fill the SymbolBoard with tiles. Ensure no two symbols are adjacent to one another.
+     */
+    public void fillWithTiles() {
+        List<Position> cells = new ArrayList<>();
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                cells.add(new Position(x, y));
+            }
+        }
+
+        Collections.shuffle(cells);
+        Random random = new Random();
+        Symbol[] allSymbols = Symbol.values();
+
+        for (Position cell : cells) {
+            List<Symbol> availableSymbols = new ArrayList<>(List.of(allSymbols));
+            List<Position> neighbors = getNeighbors(cell);
+            for (Position  neighbor : neighbors) {
+                Symbol adjacentSymbol = getSymbol(neighbor);
+                availableSymbols.remove(adjacentSymbol);
+            }
+
+            int nextIndex = random.nextInt(availableSymbols.size() - 1);
+            Symbol nextSymbol = availableSymbols.get(nextIndex);
+            setSymbol(cell.x(), cell.y(), nextSymbol);
+        }
+    }
+
+    private List<Position> getNeighbors(Position p) {
+        List<Position> neighbors = new ArrayList<>();
+
+        if (p.x() > 0) {
+            neighbors.add(p.move(Direction.LEFT));
+        }
+        if (p.x() < gridWidth - 1) {
+            neighbors.add(p.move(Direction.RIGHT));
+        }
+        if (p.y() > 0) {
+            neighbors.add(p.move(Direction.UP));
+        }
+        if (p.y() < gridHeight - 1) {
+            neighbors.add(p.move(Direction.DOWN));
+        }
+
+        return neighbors;
     }
 
     @Override
@@ -108,6 +151,10 @@ public class SymbolBoard extends JPanel {
 
     public Symbol getSymbol(int x, int y) {
         return this.symbols[y][x];
+    }
+
+    public Symbol getSymbol(Position p) {
+        return getSymbol(p.x(), p.y());
     }
 
     public boolean withinBounds(Position p) {
