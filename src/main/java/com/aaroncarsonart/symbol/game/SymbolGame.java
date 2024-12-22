@@ -1,7 +1,6 @@
 package com.aaroncarsonart.symbol.game;
 
 import com.aaroncarsonart.symbol.gui.SymbolBoard;
-import com.aaroncarsonart.symbol.gui.SymbolKeyListener;
 import com.aaroncarsonart.symbol.util.Direction;
 import com.aaroncarsonart.symbol.util.Position;
 
@@ -11,8 +10,8 @@ import com.aaroncarsonart.symbol.util.Position;
 public class SymbolGame {
     private SymbolBoard symbolBoard;
     private Input input;
-    private int frameRate = 60;
-    private int sleepMilliseconds = 1000 / frameRate;
+    private final int frameRate = 60;
+    private final long sleepMilliseconds = 1000 / frameRate;
     private boolean updated = false;
 
     public SymbolGame(SymbolBoard symbolBoard) {
@@ -28,28 +27,31 @@ public class SymbolGame {
         symbolBoard.fillWithTiles();
         while (true) {
             gameLoop();
-            try {
-                Thread.sleep(sleepMilliseconds);
-            } catch (InterruptedException e) {
-                // Ignore.
-            }
+            sleep(sleepMilliseconds);
         }
     }
 
     private void gameLoop() {
-        SymbolCommand command = input.getCommand();
+        try {
+            SymbolCommand command = input.getCommand();
 
-        switch (command) {
-            case MOVE_UP -> tryMove(Direction.UP);
-            case MOVE_DOWN -> tryMove(Direction.DOWN);
-            case MOVE_LEFT -> tryMove(Direction.LEFT);
-            case MOVE_RIGHT -> tryMove(Direction.RIGHT);
-            case SELECT_TILE -> symbolBoard.selectTile();
-        }
+            switch (command) {
+                case MOVE_UP -> tryMove(Direction.UP);
+                case MOVE_DOWN -> tryMove(Direction.DOWN);
+                case MOVE_LEFT -> tryMove(Direction.LEFT);
+                case MOVE_RIGHT -> tryMove(Direction.RIGHT);
+                case SELECT_TILE -> symbolBoard.selectTile();
+                // debug features
+                case CLEAR_TILES -> symbolBoard.clearTiles();
+            }
 
-        if (updated) {
-            symbolBoard.repaint();
-            updated = false;
+            if (updated) {
+                symbolBoard.repaint();
+                updated = false;
+            }
+        } catch (Exception e) {
+            printDebugInfo();
+            throw e;
         }
     }
 
@@ -61,5 +63,20 @@ public class SymbolGame {
             symbolBoard.setGameCursor(newCursorTarget);
             updated = true;
         }
+    }
+
+    private void sleep(long milliseconds) {
+        try {
+            Thread.sleep(milliseconds);
+        } catch (InterruptedException e) {
+            // Ignore.
+        }
+    }
+
+    private void printDebugInfo() {
+        long seed = symbolBoard.getRandomSeed();
+        System.out.println("seed: " + seed);
+        System.out.println(symbolBoard);
+        symbolBoard.printTileTotals();
     }
 }

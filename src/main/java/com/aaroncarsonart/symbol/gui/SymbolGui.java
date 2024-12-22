@@ -1,6 +1,5 @@
 package com.aaroncarsonart.symbol.gui;
 
-import com.aaroncarsonart.symbol.game.Input;
 import com.aaroncarsonart.symbol.game.SymbolGame;
 
 import javax.swing.JFrame;

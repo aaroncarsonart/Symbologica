@@ -2,7 +2,6 @@ package com.aaroncarsonart.symbol.gui;
 
 import com.aaroncarsonart.symbol.game.Input;
 import com.aaroncarsonart.symbol.game.SymbolCommand;
-import com.aaroncarsonart.symbol.util.Position;
 
 import java.awt.Point;
 import java.awt.event.MouseEvent;

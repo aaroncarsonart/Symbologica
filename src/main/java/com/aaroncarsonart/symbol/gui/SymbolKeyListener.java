@@ -33,6 +33,7 @@ public class SymbolKeyListener implements KeyListener {
                 case KeyEvent.VK_X,
                      KeyEvent.VK_SPACE,
                      KeyEvent.VK_ENTER -> SymbolCommand.SELECT_TILE;
+                case KeyEvent.VK_C -> SymbolCommand.CLEAR_TILES;
                 default -> SymbolCommand.NONE;
             };
             input.setCommand(command);

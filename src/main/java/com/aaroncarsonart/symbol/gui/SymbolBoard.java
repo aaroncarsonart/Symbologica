@@ -14,6 +14,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -45,11 +46,19 @@ public class SymbolBoard extends JPanel {
     private SymbolMouseListener mouseListener;
     private Input input;
     private int fillGridSleepMillis;
+    private int finishFillGridSleepMillis;
     private boolean pauseInput;
 
     private Position selectedTile;
     private Position swapTarget;
     private Set<Position> adjacencySet;
+
+    private EnumMap<Symbol, Integer> symbolCounts;
+    private int remainingTiles;
+    private long seed;
+    private Random random;
+    private boolean skipAnimation;
+    private boolean debug;
 
     public SymbolBoard(int width, int height, int fontSize) {
         this.gridWidth = width;
@@ -81,13 +90,58 @@ public class SymbolBoard extends JPanel {
             }
         }
 
+        // Calculate a reasonable sleep rate for animating filling the grid.
         this.fillGridSleepMillis = 1000 / (gridWidth * gridHeight);
         if (fillGridSleepMillis == 0) {
             fillGridSleepMillis = 1;
+        } else if (fillGridSleepMillis > 50) {
+            fillGridSleepMillis = 50;
         }
+        finishFillGridSleepMillis = 500;
 
         Position.register(this);
+
         adjacencySet = new HashSet<>();
+        symbolCounts = new EnumMap<>(Symbol.class);
+        for (Symbol symbol : Symbol.values()) {
+            if (symbol == Symbol.EMPTY) {
+                continue;
+            }
+            symbolCounts.put(symbol, 0);
+        }
+        remainingTiles = 0;
+
+        random = new Random();
+        seed = random.nextLong();
+        random.setSeed(seed);
+
+        skipAnimation = false;
+        debug = true;
+
+    }
+
+    public void clearTiles() {
+        if (debug) {
+            pauseInput = true;
+
+            // Clear the board.
+            for (int x = 0; x < gridWidth; x++) {
+                for (int y = 0; y < gridHeight; y++) {
+                    setSymbol(x, y, Symbol.EMPTY);
+                }
+            }
+
+            // Clear the counts.
+            for (Symbol symbol : Symbol.values()) {
+                symbolCounts.compute(symbol, (s, i) -> 0);
+            }
+            remainingTiles = 0;
+
+            // Update display, pause, and refill the board.
+            repaint();
+            sleep(finishFillGridSleepMillis);
+            fillWithTiles();
+        }
     }
 
     /**
@@ -97,6 +151,7 @@ public class SymbolBoard extends JPanel {
     public void fillWithTiles() {
         pauseInput = true;
 
+        // Collect a list of all positions.
         List<Position> cells = new ArrayList<>();
         for (int x = 0; x < gridWidth; x++) {
             for (int y = 0; y < gridHeight; y++) {
@@ -104,32 +159,90 @@ public class SymbolBoard extends JPanel {
             }
         }
 
-        Collections.shuffle(cells);
-        Random random = new Random();
+        // Shuffle the list.
+        Collections.shuffle(cells, random);
         Symbol[] allSymbols = Symbol.values();
 
+        // Populate the shuffled list with random symbols.
+        // Symbols are guaranteed to not be adjacent.
         for (Position cell : cells) {
-            List<Symbol> availableSymbols = new ArrayList<>(List.of(allSymbols));
-            List<Position> neighbors = getNeighbors(cell);
-            for (Position  neighbor : neighbors) {
-                Symbol adjacentSymbol = getSymbol(neighbor);
-                availableSymbols.remove(adjacentSymbol);
-            }
-
-            int nextIndex = random.nextInt(availableSymbols.size() - 1);
-            Symbol nextSymbol = availableSymbols.get(nextIndex);
-            setSymbol(cell.x(), cell.y(), nextSymbol);
+            List<Symbol> symbolsToUse = new ArrayList<>(List.of(allSymbols));
+            symbolsToUse.remove(Symbol.EMPTY);
+            addRandomCell(symbolsToUse, cell);
+            remainingTiles++;
 
             this.repaint();
+            sleep(fillGridSleepMillis);
+        }
+
+        // Replace orphaned symbols with a different symbol.
+        List<Symbol> symbolsToRemove = new ArrayList<>();
+        for (Symbol symbol : symbolCounts.keySet()) {
+            int count = symbolCounts.get(symbol);
+            if (count == 0) {
+                symbolsToRemove.add(symbol);
+            }
+        }
+
+        for (Symbol symbol : symbolCounts.keySet()) {
+            int count = symbolCounts.get(symbol);
+
+            if (count == 1) {
+                symbolsToRemove.add(symbol);
+
+                for (Position cell : cells) {
+                    if (getSymbol(cell) == symbol) {
+
+                        List<Symbol> availableSymbols = new ArrayList<>(List.of(allSymbols));
+                        availableSymbols.remove(Symbol.EMPTY);
+                        availableSymbols.removeAll(symbolsToRemove);
+                        symbolCounts.put(symbol, 0);
+                        addRandomCell(availableSymbols, cell);
+
+                        this.repaint();
+                        sleep(fillGridSleepMillis);
+                        break;
+                    }
+                }
+            }
+        }
+
+        pauseInput = false;
+    }
+
+    private void sleep(long millis) {
+        if (!skipAnimation) {
             try {
-                Thread.sleep(fillGridSleepMillis);
+                Thread.sleep(millis);
             } catch (InterruptedException e) {
                 // Ignore.
             }
         }
+    }
 
-        this.repaint();
-        pauseInput = false;
+    /**
+     * Add a random symbol to the board at the given position.
+     * @param availableSymbols The list of symbols available to be added.
+     * @param cell The position to add the symbol at.
+     */
+    private void addRandomCell(List<Symbol> availableSymbols, Position cell) {
+        List<Position> neighbors = getNeighbors(cell);
+        for (Position  neighbor : neighbors) {
+            Symbol adjacentSymbol = getSymbol(neighbor);
+            availableSymbols.remove(adjacentSymbol);
+        }
+
+        Symbol nextSymbol;
+        if (availableSymbols.isEmpty()) {
+            Position neighbor = neighbors.get(random.nextInt(neighbors.size()));
+            nextSymbol = getSymbol(neighbor);
+        } else {
+            int nextIndex = random.nextInt(availableSymbols.size());
+            nextSymbol = availableSymbols.get(nextIndex);
+        }
+
+        setSymbol(cell.x(), cell.y(), nextSymbol);
+        symbolCounts.compute(nextSymbol, (s, i) -> (i == null) ? 1 : i + 1);
     }
 
     private List<Position> getNeighbors(Position p) {
@@ -259,6 +372,11 @@ public class SymbolBoard extends JPanel {
         int cx = x / (tileSize + 2);
         int cy = y / (tileSize + 2);
 
+        if (cx < 0) cx = 0;
+        if (cx >= gridWidth) cx = gridWidth - 1;
+        if (cy < 0) cy = 0;
+        if (cy >= gridHeight) cy = gridHeight - 1;
+
         Position cursor = new Position(cx, cy);
         setGameCursor(cursor);
     }
@@ -283,13 +401,14 @@ public class SymbolBoard extends JPanel {
         setSymbol(swapTarget, symbol1);
         checkAdjacency(swapTarget);
 
-        selectedTile = null;
-        swapTarget = null;
+        setSelectedTile(null);
+        setSwapTarget(null);
     }
 
     public void selectTile() {
         if (!adjacencySet.isEmpty()) {
             clearAdjacencySet();
+            setSelectedTile(null);
         } else if (selectedTile == null) {
             setSelectedTile(gameCursor);
         } else if (gameCursor.equals(selectedTile)) {
@@ -358,10 +477,50 @@ public class SymbolBoard extends JPanel {
     }
 
     private void clearAdjacencySet() {
+        // Adjust the tile counts.
+        Symbol symbol = getSymbol(adjacencySet.iterator().next());
+        int tileCount = adjacencySet.size();
+        symbolCounts.compute(symbol, (s, i) -> (i == null) ? -1 : i - tileCount);
+        remainingTiles -= tileCount;
+
+        // Clear the tiles.
         for (Position next : adjacencySet) {
             setSymbol(next, Symbol.EMPTY);
         }
         adjacencySet.clear();
         repaint();
+
+        // Fill again if board is empty.
+        if (remainingTiles == 0) {
+            sleep(finishFillGridSleepMillis);
+            fillWithTiles();
+        }
+    }
+
+    public void printTileTotals() {
+        for (Symbol symbol : symbolCounts.keySet()) {
+            System.out.println(symbol.sprite + ": " + symbolCounts.get(symbol));
+        }
+        System.out.println("remainingTiles: " + remainingTiles);
+        System.out.println();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        for (int y = 0; y < gridHeight; y++) {
+            for (int x = 0; x < gridWidth; x++) {
+                sb.append(getSymbol(x, y).sprite);
+                sb.append(' ');
+            }
+            sb.append('\n');
+        }
+
+        return sb.toString();
+    }
+
+    public long getRandomSeed() {
+        return seed;
     }
 }

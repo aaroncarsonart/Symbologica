@@ -12,7 +12,7 @@ public enum Symbol {
     BETA('β', Colors.ORANGE, Colors.ORANGE_DARK),
     OMEGA('Ω', Colors.YELLOW, Colors.YELLOW_DARK),
     PSI('Ψ', Colors.GREEN, Colors.GREEN_DARK),
-    LAMBDA('Λ', Colors.BLUE, Colors.BLUE_DARK),
+    PI('∏', Colors.BLUE, Colors.BLUE_DARK),
     DELTA('Δ', Colors.PURPLE, Colors.PURPLE_DARK),
     PHI('Φ', Colors.GREY, Colors.GREY_DARK),
     EMPTY(' ', Colors.GREY, Colors.GREY_DARK);
@@ -25,5 +25,10 @@ public enum Symbol {
         this.sprite = sprite;
         this.fg = fg;
         this.bg = bg;
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(sprite);
     }
 }
