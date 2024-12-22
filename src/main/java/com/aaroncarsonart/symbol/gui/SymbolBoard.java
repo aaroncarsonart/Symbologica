@@ -14,8 +14,11 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.Stack;
 
 /**
  * The board containing the grid of squares, drawn for the player to navigate and swap.
@@ -46,6 +49,7 @@ public class SymbolBoard extends JPanel {
 
     private Position selectedTile;
     private Position swapTarget;
+    private Set<Position> adjacencySet;
 
     public SymbolBoard(int width, int height, int fontSize) {
         this.gridWidth = width;
@@ -81,6 +85,9 @@ public class SymbolBoard extends JPanel {
         if (fillGridSleepMillis == 0) {
             fillGridSleepMillis = 1;
         }
+
+        Position.register(this);
+        adjacencySet = new HashSet<>();
     }
 
     /**
@@ -191,6 +198,20 @@ public class SymbolBoard extends JPanel {
             g.setColor(symbol.fg);
             g.drawRect(sx, sy, sw, sh);
         }
+
+        // Paint the adjacency set.
+        if (!adjacencySet.isEmpty()) {
+            for (Position tile : adjacencySet) {
+                int tx = tile.x() * (tileSize + 2) + 2;
+                int ty = tile.y() * (tileSize + 2) + 2;
+                int tw = tileSize;
+                int th = tw;
+
+                Symbol symbol = getSymbol(tile);
+                g.setColor(symbol.fg);
+                g.drawRect(tx, ty, tw, th);
+            }
+        }
     }
 
     public void setSymbol(int x, int y, Symbol symbol) {
@@ -220,6 +241,7 @@ public class SymbolBoard extends JPanel {
     public void setGameCursor(Position gameCursor) {
         if (this.gameCursor != gameCursor) {
             this.gameCursor = gameCursor;
+            checkAdjacency(this.gameCursor);
         }
     }
 
@@ -259,13 +281,16 @@ public class SymbolBoard extends JPanel {
 
         setSymbol(selectedTile, symbol2);
         setSymbol(swapTarget, symbol1);
+        checkAdjacency(swapTarget);
 
         selectedTile = null;
         swapTarget = null;
     }
 
     public void selectTile() {
-        if (selectedTile == null) {
+        if (!adjacencySet.isEmpty()) {
+            clearAdjacencySet();
+        } else if (selectedTile == null) {
             setSelectedTile(gameCursor);
         } else if (gameCursor.equals(selectedTile)) {
             setSelectedTile(null);
@@ -278,5 +303,65 @@ public class SymbolBoard extends JPanel {
 
     public Input getInput() {
         return input;
+    }
+
+    public int getGridWidth() {
+        return gridWidth;
+    }
+
+    private void checkAdjacency(Position tile) {
+        if (hasAdjacency(tile)) {
+            if (adjacencySet.isEmpty() || !adjacencySet.contains(tile)) {
+                adjacencySet.clear();
+                buildAdjacencySet(tile);
+            }
+        } else if (!adjacencySet.isEmpty()) {
+            adjacencySet.clear();
+        }
+    }
+
+    private boolean hasAdjacency(Position tile) {
+        Symbol tileSymbol = getSymbol(tile);
+        if (tileSymbol == Symbol.EMPTY) {
+            return false;
+        }
+
+        List<Position> neighbors = getNeighbors(tile);
+        for (Position neighbor : neighbors) {
+            Symbol neighboringSymbol = getSymbol(neighbor);
+            if (tileSymbol == neighboringSymbol) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void buildAdjacencySet(Position start) {
+        Symbol symbol = getSymbol(start);
+        Stack<Position> stack = new Stack<>();
+        Set<Position> visited = new HashSet<>();
+
+        stack.add(start);
+        while (!stack.isEmpty()) {
+            Position next = stack.pop();
+            visited.add(next);
+            Symbol nextSymbol = getSymbol(next);
+
+            if (symbol == nextSymbol) {
+                adjacencySet.add(next);
+
+                List<Position> neighbors = getNeighbors(next);
+                neighbors.removeIf(visited::contains);
+                stack.addAll(neighbors);
+            }
+        }
+    }
+
+    private void clearAdjacencySet() {
+        for (Position next : adjacencySet) {
+            setSymbol(next, Symbol.EMPTY);
+        }
+        adjacencySet.clear();
+        repaint();
     }
 }

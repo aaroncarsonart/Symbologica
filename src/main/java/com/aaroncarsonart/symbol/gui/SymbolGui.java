@@ -17,7 +17,7 @@ public class SymbolGui extends JFrame {
 
     public SymbolGui() {
         this.setTitle("Symbologica");
-        this.symbolBoard = new SymbolBoard(16, 12, 30);
+        this.symbolBoard = new SymbolBoard(10, 8, 30);
         this.add(symbolBoard, BorderLayout.CENTER);
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
