@@ -65,17 +65,21 @@ public class SymbolBoard extends JPanel {
     private Position selectedTile;
     private Position swapTarget;
     private Set<Position> adjacencySet;
+    private Position orphanedTile;
 
     private EnumMap<Symbol, Integer> symbolCounts;
     private int remainingTiles;
     private long seed;
     private Random random;
-    private boolean skipAnimation;
+    private boolean skipSleepAnimation;
     private boolean debug;
 
-    private boolean blinkAnimation;
     private boolean blinkAnimationEnabled;
-    private long blinkAnimationTimer;
+    private boolean orphanBlinkAnimationEnabled;
+    private boolean movesBlinkAnimation;
+    private boolean orphanBlinkAnimation;
+    private long movesBlinkAnimationTimer;
+    private long orphanBlinkAnimationTimer;
 
     private int score;
     private int moves;
@@ -112,7 +116,7 @@ public class SymbolBoard extends JPanel {
 
         for (int x = 0; x < gridWidth; x++) {
             for (int y = 0; y < gridHeight; y++) {
-                symbols[y][x] = Symbol.EMPTY;
+                setSymbol(x, y, Symbol.EMPTY);
             }
         }
 
@@ -141,10 +145,12 @@ public class SymbolBoard extends JPanel {
         seed = random.nextLong();
         random.setSeed(seed);
 
-        skipAnimation = false;
+        skipSleepAnimation = false;
         debug = true;
-        blinkAnimation = false;
+        movesBlinkAnimation = false;
+        orphanBlinkAnimation = false;
         blinkAnimationEnabled = false;
+        orphanBlinkAnimationEnabled = false;
 
         score = 0;
         moves = 10;
@@ -248,7 +254,7 @@ public class SymbolBoard extends JPanel {
     }
 
     private void sleep(long millis) {
-        if (!skipAnimation) {
+        if (!skipSleepAnimation) {
             try {
                 Thread.sleep(millis);
             } catch (InterruptedException e) {
@@ -312,7 +318,7 @@ public class SymbolBoard extends JPanel {
 
         for (int x = 0; x < gridWidth; x++) {
             for (int y = 0; y < gridHeight; y++) {
-                Symbol symbol = symbols[y][x];
+                Symbol symbol = getSymbol(x, y);
 
                 int rx = x * (tileSize + widthGL) + widthGL;
                 int ry = y * (tileSize + widthGL) + widthGL;
@@ -337,7 +343,7 @@ public class SymbolBoard extends JPanel {
             g.drawRect(cx, cy, cw, ch);
 
             // Paint move updates in cursor.
-            if (blinkAnimation) {
+            if (movesBlinkAnimation) {
                 int moveModifier = 0;
                 if (!adjacencySet.isEmpty()) {
                     moveModifier = calculatePoints(adjacencySet.size());
@@ -405,6 +411,18 @@ public class SymbolBoard extends JPanel {
                 g.setColor(symbol.fg);
                 g.drawRect(tx, ty, tw, th);
             }
+        }
+
+        // Paint the orphaned tile warning blinking cursor.
+        if (orphanBlinkAnimation && orphanedTile != null) {
+            int tx = orphanedTile.x() * (tileSize + 2) + 2;
+            int ty = orphanedTile.y() * (tileSize + 2) + 2;
+            int tw = tileSize;
+            int th = tw;
+
+            Symbol symbol = getSymbol(orphanedTile);
+            g.setColor(symbol.fg);
+            g.drawRect(tx, ty, tw, th);
         }
     }
 
@@ -510,6 +528,8 @@ public class SymbolBoard extends JPanel {
 
         if (!adjacencySet.isEmpty()) {
             enableAndResetBlinkAnimation();
+        } else {
+            disableBlinkAnimation();
         }
     }
 
@@ -539,11 +559,12 @@ public class SymbolBoard extends JPanel {
     private void checkAdjacency(Position tile) {
         if (hasAdjacency(tile)) {
             if (adjacencySet.isEmpty() || !adjacencySet.contains(tile)) {
-                adjacencySet.clear();
+                deselectAdjacencySet();
                 buildAdjacencySet(tile);
+                checkForOrphanedTile();
             }
         } else if (!adjacencySet.isEmpty()) {
-            adjacencySet.clear();
+            deselectAdjacencySet();
         }
     }
 
@@ -595,7 +616,7 @@ public class SymbolBoard extends JPanel {
         for (Position next : adjacencySet) {
             setSymbol(next, Symbol.EMPTY);
         }
-        adjacencySet.clear();
+        deselectAdjacencySet();
         repaint();
 
         calculateMoveCost(tileCount);
@@ -604,6 +625,29 @@ public class SymbolBoard extends JPanel {
         if (remainingTiles == 0) {
             sleep(finishFillGridSleepMillis);
             fillWithTiles();
+        }
+    }
+
+    private void deselectAdjacencySet() {
+        adjacencySet.clear();
+        orphanedTile = null;
+    }
+
+    private void checkForOrphanedTile() {
+        Symbol symbol = getSymbol(adjacencySet.iterator().next());
+        int tileCount = adjacencySet.size();
+        int countIfOrphanExists = tileCount + 1;
+        if (symbolCounts.getOrDefault(symbol, 0) == countIfOrphanExists) {
+            for (int x = 0; x < gridWidth; x++) {
+                for (int y = 0; y < gridHeight; y++) {
+                    Position tile = new Position(x, y);
+                    Symbol nextSymbol = getSymbol(tile);
+                    if (symbol == nextSymbol && !adjacencySet.contains(tile)) {
+                        orphanedTile = tile;
+                        return;
+                    }
+                }
+            }
         }
     }
 
@@ -670,21 +714,37 @@ public class SymbolBoard extends JPanel {
 
     private void enableAndResetBlinkAnimation() {
         blinkAnimationEnabled = true;
-        blinkAnimation = true;
-        resetBlinkAnimationTimer();
+        movesBlinkAnimation = true;
+        resetMovesBlinkAnimationTimer();
+
+        if (orphanedTile != null) {
+            orphanBlinkAnimationEnabled = true;
+            orphanBlinkAnimation = true;
+            resetOrphanBlinkAnimationTimer();
+        }
     }
 
     private void disableBlinkAnimation() {
         blinkAnimationEnabled = false;
-        blinkAnimation = false;
+        orphanBlinkAnimationEnabled = false;
+        movesBlinkAnimation = false;
+        orphanBlinkAnimation = false;
     }
 
-    private void resetBlinkAnimationTimer() {
-        blinkAnimationTimer = 750;
+    private void resetMovesBlinkAnimationTimer() {
+        movesBlinkAnimationTimer = 750;
     }
 
-    private void toggleBlinkAnimation() {
-        blinkAnimation = !blinkAnimation;
+    private void resetOrphanBlinkAnimationTimer() {
+        orphanBlinkAnimationTimer = 325;
+    }
+
+    private void toggleMovesBlinkAnimation() {
+        movesBlinkAnimation = !movesBlinkAnimation;
+    }
+
+    private void toggleOrphanBlinkAnimation() {
+        orphanBlinkAnimation = !orphanBlinkAnimation;
     }
 
     /**
@@ -693,12 +753,24 @@ public class SymbolBoard extends JPanel {
      * @return True if the animatin is toggled, else false.
      */
     public boolean updateBlinkAnimationTimer(long millis) {
-        blinkAnimationTimer -= millis;
-        if (blinkAnimationTimer <= 0) {
-            toggleBlinkAnimation();
-            resetBlinkAnimationTimer();
-            return true;
+        boolean updated = false;
+
+        movesBlinkAnimationTimer -= millis;
+        if (movesBlinkAnimationTimer <= 0) {
+            toggleMovesBlinkAnimation();
+            resetMovesBlinkAnimationTimer();
+            updated = true;
         }
-        return false;
+
+        if (orphanBlinkAnimationEnabled) {
+            orphanBlinkAnimationTimer -= millis;
+            if (orphanBlinkAnimationTimer <= 0) {
+                toggleOrphanBlinkAnimation();
+                resetOrphanBlinkAnimationTimer();
+                updated = true;
+            }
+        }
+
+        return updated;
     }
 }
