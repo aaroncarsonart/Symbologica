@@ -1,5 +1,6 @@
 package com.aaroncarsonart.symbol.game;
 
+import com.aaroncarsonart.symbol.gui.ScorePanel;
 import com.aaroncarsonart.symbol.gui.SymbolBoard;
 import com.aaroncarsonart.symbol.util.Direction;
 import com.aaroncarsonart.symbol.util.Position;
@@ -9,13 +10,15 @@ import com.aaroncarsonart.symbol.util.Position;
  */
 public class SymbolGame {
     private SymbolBoard symbolBoard;
+    private ScorePanel scorePanel;
     private Input input;
     private final int frameRate = 60;
     private final long sleepMilliseconds = 1000 / frameRate;
     private boolean updated = false;
 
-    public SymbolGame(SymbolBoard symbolBoard) {
+    public SymbolGame(SymbolBoard symbolBoard, ScorePanel scorePanel) {
         this.symbolBoard = symbolBoard;
+        this.scorePanel = scorePanel;
         this.input = symbolBoard.getInput();
     }
 
@@ -40,13 +43,16 @@ public class SymbolGame {
                 case MOVE_DOWN -> tryMove(Direction.DOWN);
                 case MOVE_LEFT -> tryMove(Direction.LEFT);
                 case MOVE_RIGHT -> tryMove(Direction.RIGHT);
-                case SELECT_TILE -> symbolBoard.selectTile();
+                case SELECT_TILE -> selectTile();
                 // debug features
                 case CLEAR_TILES -> symbolBoard.clearTiles();
             }
 
+            updateBlinkAnimationTimer();
+
             if (updated) {
                 symbolBoard.repaint();
+                scorePanel.repaint();
                 updated = false;
             }
         } catch (Exception e) {
@@ -65,6 +71,11 @@ public class SymbolGame {
         }
     }
 
+    private void selectTile() {
+        symbolBoard.selectTile();
+        updated = true;
+    }
+
     private void sleep(long milliseconds) {
         try {
             Thread.sleep(milliseconds);
@@ -78,5 +89,13 @@ public class SymbolGame {
         System.out.println("seed: " + seed);
         System.out.println(symbolBoard);
         symbolBoard.printTileTotals();
+    }
+
+    private void updateBlinkAnimationTimer() {
+        if (symbolBoard.isBlinkAnimationEnabled()) {
+            if (symbolBoard.updateBlinkAnimationTimer(sleepMilliseconds)) {
+                updated = true;
+            }
+        }
     }
 }

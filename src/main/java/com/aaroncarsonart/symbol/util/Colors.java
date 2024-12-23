@@ -29,4 +29,5 @@ public class Colors {
 
     public static final Color BLACK = new Color(0, 0, 0);
     public static final Color WHITE = new Color(255, 255, 255);
+    public static final Color BLACK_TRANSPARENT = new Color(0, 0, 0, 32);
 }
