@@ -12,6 +12,9 @@ import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Toolkit;
 import java.util.Arrays;
 import java.util.List;
 
@@ -34,6 +37,9 @@ public class SymbolGui extends JFrame {
     private TextBoard gameoverBoard;
     private JButton continueButton;
 
+    private Point prevWindowLocation;
+    private Dimension prevWindowSize;
+
     public SymbolGui() {
         setTitle(APP_TITLE);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -43,6 +49,7 @@ public class SymbolGui extends JFrame {
     }
 
     private void initializeStartScreen() {
+        cacheWindowLocationAndSize();
         getContentPane().removeAll();
         if (keyListener != null) removeKeyListener(keyListener);
 
@@ -87,10 +94,11 @@ public class SymbolGui extends JFrame {
         startButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         pack();
-        setLocationRelativeTo(null);
+        calculateNewWindowLocation();
     }
 
     private void initializeGameComponents() {
+        cacheWindowLocationAndSize();
        getContentPane().removeAll();
 
         symbolBoard = new SymbolBoard(10, 8, TILE_FONT_SIZE);
@@ -106,10 +114,11 @@ public class SymbolGui extends JFrame {
         symbolGame = new SymbolGame(symbolBoard, scorePanel);
 
         pack();
-        setLocationRelativeTo(null);
+        calculateNewWindowLocation();
     }
 
     private void initializeGameoverScreen() {
+        cacheWindowLocationAndSize();
         getContentPane().removeAll();
         removeKeyListener(keyListener);
 
@@ -158,9 +167,8 @@ public class SymbolGui extends JFrame {
         continueButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         pack();
-        setLocationRelativeTo(null);
+        calculateNewWindowLocation();
     }
-
 
     public void display() {
         setVisible(true);
@@ -173,5 +181,38 @@ public class SymbolGui extends JFrame {
             initializeGameoverScreen();
         });
         thread.start();
+    }
+
+    private void cacheWindowLocationAndSize() {
+        if (isVisible()) {
+            prevWindowLocation = getLocationOnScreen();
+            prevWindowSize = getSize();
+        }
+    }
+
+    private void calculateNewWindowLocation() {
+        if (isVisible()) {
+            Dimension newWindowSize = getSize();
+
+            int nx = prevWindowLocation.x + prevWindowSize.width / 2 - newWindowSize.width / 2;
+            int ny = prevWindowLocation.y + prevWindowSize.height / 2 - newWindowSize.height / 2;
+
+            if (nx < 0) nx = 0;
+            if (ny < 0) ny = 0;
+
+            Toolkit toolkit = Toolkit.getDefaultToolkit();
+            Dimension screenSize = toolkit.getScreenSize();
+
+            if (nx + newWindowSize.width > screenSize.width) {
+                nx = screenSize.width - newWindowSize.width;
+            }
+            if (ny + newWindowSize.height > screenSize.height) {
+                ny = screenSize.height - newWindowSize.height;
+            }
+
+            setLocation(nx, ny);
+        } else {
+            setLocationRelativeTo(null);
+        }
     }
 }
