@@ -15,6 +15,7 @@ public class SymbolGame {
     private final int frameRate = 60;
     private final long sleepMilliseconds = 1000 / frameRate;
     private boolean updated = false;
+    private boolean doGameLoop = true;
 
     public SymbolGame(SymbolBoard symbolBoard, ScorePanel scorePanel) {
         this.symbolBoard = symbolBoard;
@@ -28,7 +29,7 @@ public class SymbolGame {
 
     private void startGameLoop() {
         symbolBoard.fillWithTiles();
-        while (true) {
+        while (doGameLoop) {
             gameLoop();
             sleep(sleepMilliseconds);
         }
@@ -44,8 +45,8 @@ public class SymbolGame {
                 case MOVE_LEFT -> tryMove(Direction.LEFT);
                 case MOVE_RIGHT -> tryMove(Direction.RIGHT);
                 case SELECT_TILE -> selectTile();
-                // debug features
-                case CLEAR_TILES -> symbolBoard.clearTiles();
+                case CLEAR_TILES -> symbolBoard.debugClearTiles();
+                case GAME_OVER -> symbolBoard.debugGameOver();
             }
 
             updateBlinkAnimationTimer();
@@ -54,6 +55,10 @@ public class SymbolGame {
                 symbolBoard.repaint();
                 scorePanel.repaint();
                 updated = false;
+            }
+
+            if (symbolBoard.isGameOver()) {
+                doGameLoop = false;
             }
         } catch (Exception e) {
             printDebugInfo();

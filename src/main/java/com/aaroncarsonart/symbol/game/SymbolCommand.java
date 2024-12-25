@@ -10,5 +10,6 @@ public enum SymbolCommand {
     MOVE_RIGHT,
     SELECT_TILE,
     CLEAR_TILES,
+    GAME_OVER,
     NONE;
 }

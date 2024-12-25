@@ -1,5 +1,6 @@
 package com.aaroncarsonart.symbol.gui;
 
+import com.aaroncarsonart.symbol.game.GameoverCondition;
 import com.aaroncarsonart.symbol.game.Symbol;
 import com.aaroncarsonart.symbol.game.SymbolGame;
 import com.aaroncarsonart.symbol.util.Colors;
@@ -19,6 +20,7 @@ import java.util.List;
  */
 public class SymbolGui extends JFrame {
     private static final String APP_TITLE = "Symbologica";
+    private static final String GAME_OVER_STR = "Gameover";
     public static final int TILE_FONT_SIZE = 30;
 
     private TextBoard titleBoard;
@@ -28,6 +30,9 @@ public class SymbolGui extends JFrame {
     private SymbolKeyListener keyListener;
     private SymbolGame symbolGame;
     private ScorePanel scorePanel;
+
+    private TextBoard gameoverBoard;
+    private JButton continueButton;
 
     public SymbolGui() {
         setTitle(APP_TITLE);
@@ -65,8 +70,6 @@ public class SymbolGui extends JFrame {
         startButton.setFont(symbolBoard.getTileFont());
         startButton.setBackground(Colors.GREEN_DARK);
         startButton.setForeground(Colors.GREEN);
-        startButton.setOpaque(true);
-        startButton.setContentAreaFilled(true);
 
         BoxLayout boxLayout = new BoxLayout(symbolBoard, BoxLayout.Y_AXIS);
         symbolBoard.setLayout(boxLayout);
@@ -88,7 +91,7 @@ public class SymbolGui extends JFrame {
     }
 
     private void initializeGameComponents() {
-        getContentPane().removeAll();
+       getContentPane().removeAll();
 
         symbolBoard = new SymbolBoard(10, 8, TILE_FONT_SIZE);
         add(symbolBoard, BorderLayout.CENTER);
@@ -106,6 +109,59 @@ public class SymbolGui extends JFrame {
         setLocationRelativeTo(null);
     }
 
+    private void initializeGameoverScreen() {
+        getContentPane().removeAll();
+        removeKeyListener(keyListener);
+
+        GameoverCondition gameoverCondition = symbolBoard.getGameoverCondition();
+
+        int boardWidth = GAME_OVER_STR.length() + 2;
+        symbolBoard = new SymbolBoard(boardWidth, 8, 30);
+        symbolBoard.backgroundComponentMode();
+        symbolBoard.fillWithTiles();
+
+        List<Symbol> titleSymbols = Arrays.asList(
+                Symbol.SIGMA, // G
+                Symbol.BETA,  // a
+                Symbol.OMEGA, // m
+                Symbol.PSI,   // e
+                Symbol.PI,    // O
+                Symbol.DELTA, // v
+                Symbol.PHI,   // e
+                Symbol.SIGMA  // r
+        );
+        gameoverBoard = new TextBoard(GAME_OVER_STR, titleSymbols);
+        SymbolLabel gameoverDescLabel = new SymbolLabel(gameoverCondition.desc);
+
+        continueButton = new SymbolButton("Continue");
+        continueButton.addActionListener(event -> initializeStartScreen());
+        continueButton.setFont(symbolBoard.getTileFont());
+        continueButton.setBackground(Colors.ORANGE_DARK);
+        continueButton.setForeground(Colors.ORANGE);
+
+        BoxLayout boxLayout = new BoxLayout(symbolBoard, BoxLayout.Y_AXIS);
+        symbolBoard.setLayout(boxLayout);
+
+        add(symbolBoard, BorderLayout.CENTER);
+        symbolBoard.add(Box.createVerticalGlue());
+        symbolBoard.add(Box.createVerticalGlue());
+        symbolBoard.add(gameoverBoard);
+        symbolBoard.add(Box.createVerticalGlue());
+        symbolBoard.add(gameoverDescLabel);
+        symbolBoard.add(Box.createVerticalGlue());
+        symbolBoard.add(Box.createVerticalGlue());
+        symbolBoard.add(continueButton);
+        symbolBoard.add(Box.createVerticalGlue());
+
+        titleBoard.setAlignmentX(Component.CENTER_ALIGNMENT);
+        gameoverDescLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        continueButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        pack();
+        setLocationRelativeTo(null);
+    }
+
+
     public void display() {
         setVisible(true);
     }
@@ -114,6 +170,7 @@ public class SymbolGui extends JFrame {
         Thread thread = new Thread(() -> {
             initializeGameComponents();
             symbolGame.start();
+            initializeGameoverScreen();
         });
         thread.start();
     }

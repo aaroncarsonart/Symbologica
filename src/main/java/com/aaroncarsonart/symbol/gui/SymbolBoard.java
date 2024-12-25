@@ -1,5 +1,6 @@
 package com.aaroncarsonart.symbol.gui;
 
+import com.aaroncarsonart.symbol.game.GameoverCondition;
 import com.aaroncarsonart.symbol.game.Input;
 import com.aaroncarsonart.symbol.game.Symbol;
 import com.aaroncarsonart.symbol.util.Colors;
@@ -85,6 +86,8 @@ public class SymbolBoard extends JPanel {
     private int score;
     private int moves;
 
+    private GameoverCondition gameoverCondition;
+
     public SymbolBoard(int width, int height, int tileFontSize) {
         gridWidth = width;
         gridHeight = height;
@@ -165,7 +168,7 @@ public class SymbolBoard extends JPanel {
         blankMouseCursor = toolKit.createCustomCursor(cursorImage, new Point(0, 0), "blank cursor");
     }
 
-    public void clearTiles() {
+    public void debugClearTiles() {
         if (debug) {
             pauseInput = true;
 
@@ -185,6 +188,12 @@ public class SymbolBoard extends JPanel {
             // Update display, pause, and refill the board.
             repaint();
             fillWithTiles();
+        }
+    }
+
+    public void debugGameOver() {
+        if (debug) {
+            moves = -1;
         }
     }
 
@@ -386,7 +395,7 @@ public class SymbolBoard extends JPanel {
                     int mx1 = mx + tileSize / 2 - moveFontWidth * newMoveCountText.length() / 2;
                     int my1 = my + tileSize / 2 - moveFontAscent - 2 + moveFontAscent;
 
-                    drawTextOutline(g, moveFont, newMoveCountText, mx1, my1, Color.BLACK);
+                    drawTextOutline(g, moveFont, newMoveCountText, mx1, my1, Color.BLACK, outlineStroke);
 
                     g.setFont(moveFont);
                     g.setColor(Colors.WHITE);
@@ -398,7 +407,7 @@ public class SymbolBoard extends JPanel {
                     int mx2 = mx + tileSize / 2 - moveFontWidth * moveModifierText.length() / 2;
                     int my2 = my + tileSize / 2 - moveFontAscent - 2 + moveFontAscent * 2;
 
-                    drawTextOutline(g, moveFont, moveModifierText, mx2, my2, Color.BLACK);
+                    drawTextOutline(g, moveFont, moveModifierText, mx2, my2, Color.BLACK, outlineStroke);
 
                     g.setFont(moveFont);
                     Color modifierColor = (moveModifier > 0) ? Colors.GREEN : Colors.RED;
@@ -453,7 +462,8 @@ public class SymbolBoard extends JPanel {
         }
     }
 
-    public void drawTextOutline(Graphics2D g, Font font, String text, int x, int y, Color outlineColor) {
+    public static void drawTextOutline(Graphics2D g, Font font, String text, int x, int y, Color outlineColor,
+                                       BasicStroke outlineStroke) {
         Stroke originalStroke = g.getStroke();
 
         GlyphVector glyphVector = font.createGlyphVector(g.getFontRenderContext(), text);
@@ -819,5 +829,23 @@ public class SymbolBoard extends JPanel {
 
     public Font getTileFont() {
         return tileFont;
+    }
+
+    public boolean isGameOver() {
+        for (Integer symbolCount : symbolCounts.values()) {
+            if (symbolCount == 1) {
+                gameoverCondition = GameoverCondition.ORPHANED_TILE;
+                return true;
+            }
+        }
+        if (moves < 0) {
+            gameoverCondition = GameoverCondition.NEGATIVE_MOVE_COUNT;
+            return true;
+        }
+        return false;
+    }
+
+    public GameoverCondition getGameoverCondition() {
+        return gameoverCondition;
     }
 }
