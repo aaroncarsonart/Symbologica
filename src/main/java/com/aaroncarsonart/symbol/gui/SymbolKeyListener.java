@@ -33,7 +33,9 @@ public class SymbolKeyListener implements KeyListener {
                 case KeyEvent.VK_X,
                      KeyEvent.VK_SPACE,
                      KeyEvent.VK_ENTER -> SymbolCommand.SELECT_TILE;
-                case KeyEvent.VK_C -> SymbolCommand.CLEAR_TILES;
+                case KeyEvent.VK_Z,
+                     KeyEvent.VK_ESCAPE -> SymbolCommand.DESELECT_TILE;
+                case KeyEvent.VK_C -> SymbolCommand.CLEAR_ALL_TILES;
                 case KeyEvent.VK_G -> SymbolCommand.GAME_OVER;
                 default -> SymbolCommand.NONE;
             };

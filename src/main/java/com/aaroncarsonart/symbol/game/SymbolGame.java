@@ -45,7 +45,8 @@ public class SymbolGame {
                 case MOVE_LEFT -> tryMove(Direction.LEFT);
                 case MOVE_RIGHT -> tryMove(Direction.RIGHT);
                 case SELECT_TILE -> selectTile();
-                case CLEAR_TILES -> symbolBoard.debugClearTiles();
+                case DESELECT_TILE -> deselectTile();
+                case CLEAR_ALL_TILES -> symbolBoard.debugClearTiles();
                 case GAME_OVER -> symbolBoard.debugGameOver();
             }
 
@@ -78,6 +79,11 @@ public class SymbolGame {
 
     private void selectTile() {
         symbolBoard.selectTile();
+        updated = true;
+    }
+
+    private void deselectTile() {
+        symbolBoard.setSelectedTile(null);
         updated = true;
     }
 
