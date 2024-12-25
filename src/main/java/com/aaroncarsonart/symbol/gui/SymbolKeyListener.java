@@ -38,7 +38,6 @@ public class SymbolKeyListener implements KeyListener {
             };
             input.setCommand(command);
         }
-
     }
 
     @Override

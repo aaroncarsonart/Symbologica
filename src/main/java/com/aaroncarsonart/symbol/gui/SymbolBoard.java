@@ -41,11 +41,10 @@ public class SymbolBoard extends JPanel {
     // The width of the grid lines.
     private int widthGL;
 
-    private int widthPx;
-    private int heightPx;
-    private Dimension dimensions;
+    protected int widthPx;
+    protected int heightPx;
 
-    private Font tileFont;
+    protected Font tileFont;
     private int tileSize;
     private int tileFontWidth;
     private int tileFontAscent;
@@ -55,11 +54,12 @@ public class SymbolBoard extends JPanel {
     private int moveFontAscent;
     private BasicStroke outlineStroke;
 
-    private Position gameCursor;
+    protected Position gameCursor;
     private SymbolMouseListener mouseListener;
+    private Cursor blankMouseCursor;
     private Input input;
     private int fillGridSleepMillis;
-    private int finishFillGridSleepMillis;
+    private int preFillGridSleepMillis;
     private boolean pauseInput;
 
     private Position selectedTile;
@@ -73,6 +73,7 @@ public class SymbolBoard extends JPanel {
     private Random random;
     private boolean skipSleepAnimation;
     private boolean debug;
+    private boolean backgroundComponentMode;
 
     private boolean blinkAnimationEnabled;
     private boolean orphanBlinkAnimationEnabled;
@@ -84,14 +85,14 @@ public class SymbolBoard extends JPanel {
     private int score;
     private int moves;
 
-    public SymbolBoard(int width, int height, int fontSize) {
+    public SymbolBoard(int width, int height, int tileFontSize) {
         gridWidth = width;
         gridHeight = height;
         symbols = new Symbol[height][width];
 
         widthGL = 2;
 
-        tileFont = new Font("Courier New", Font.PLAIN, fontSize);
+        tileFont = new Font("Courier New", Font.PLAIN, tileFontSize);
         FontMetrics tileFontMetrics = getFontMetrics(tileFont);
         tileSize = tileFontMetrics.getHeight();
         tileFontWidth = tileFontMetrics.stringWidth("@");
@@ -105,10 +106,12 @@ public class SymbolBoard extends JPanel {
 
         widthPx = (gridWidth) * (tileSize + widthGL) + widthGL;
         heightPx = (gridHeight) * (tileSize + widthGL) + widthGL;
-        dimensions = new Dimension(widthPx, heightPx);
-        setPreferredSize(dimensions);
 
-        gameCursor = new Position(0, 0);
+        Dimension dimensions = new Dimension(widthPx, heightPx);
+        setPreferredSize(dimensions);
+        setMinimumSize(dimensions);
+        setMaximumSize(dimensions);
+
         input = new Input();
         mouseListener = new SymbolMouseListener(this, input);
         addMouseListener(mouseListener);
@@ -127,7 +130,7 @@ public class SymbolBoard extends JPanel {
         } else if (fillGridSleepMillis > 50) {
             fillGridSleepMillis = 50;
         }
-        finishFillGridSleepMillis = 500;
+        preFillGridSleepMillis = 500;
 
         Position.register(this);
 
@@ -151,6 +154,7 @@ public class SymbolBoard extends JPanel {
         orphanBlinkAnimation = false;
         blinkAnimationEnabled = false;
         orphanBlinkAnimationEnabled = false;
+        pauseInput = true;
 
         score = 0;
         moves = 10;
@@ -158,8 +162,7 @@ public class SymbolBoard extends JPanel {
         // Hide mouse cursor in component.
         Toolkit toolKit = Toolkit.getDefaultToolkit();
         BufferedImage cursorImage = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-        Cursor blankCursor = toolKit.createCustomCursor(cursorImage, new Point(0, 0), "blank cursor");
-        setCursor(blankCursor);
+        blankMouseCursor = toolKit.createCustomCursor(cursorImage, new Point(0, 0), "blank cursor");
     }
 
     public void clearTiles() {
@@ -181,7 +184,6 @@ public class SymbolBoard extends JPanel {
 
             // Update display, pause, and refill the board.
             repaint();
-            sleep(finishFillGridSleepMillis);
             fillWithTiles();
         }
     }
@@ -192,6 +194,11 @@ public class SymbolBoard extends JPanel {
      */
     public void fillWithTiles() {
         pauseInput = true;
+        if (!backgroundComponentMode){
+            showMouseCursor();
+        }
+
+        sleep(preFillGridSleepMillis);
 
         // Collect a list of all positions.
         List<Position> cells = new ArrayList<>();
@@ -249,8 +256,19 @@ public class SymbolBoard extends JPanel {
             }
         }
 
-        repaint();
+        if (!backgroundComponentMode) {
+            hideMouseCursor();
+
+            Point mousePosition = getMousePosition();
+            if (mousePosition != null) {
+                setGameCursor(mousePosition.x, mousePosition.y);
+            } else {
+                gameCursor = new Position(0, 0);
+            }
+        }
+
         pauseInput = false;
+        repaint();
     }
 
     private void sleep(long millis) {
@@ -307,9 +325,21 @@ public class SymbolBoard extends JPanel {
         return neighbors;
     }
 
+    protected void drawTile(Graphics2D g, int x, int y, Color bg, Color fg, char sprite) {
+        int rx = x * (tileSize + widthGL) + widthGL;
+        int ry = y * (tileSize + widthGL) + widthGL;
+        g.setColor(bg);
+        g.fillRect(rx, ry, tileSize, tileSize);
+
+        int tx = rx + tileSize / 2 - tileFontWidth / 2;
+        int ty = ry + tileFontAscent;
+        g.setColor(fg);
+        g.drawString(sprite + "", tx, ty);
+    }
+
     @Override
-    public void paint(Graphics graphics) {
-        Graphics2D g = (Graphics2D) graphics;
+    public void paintComponent(Graphics graphics) {
+        Graphics2D g = (Graphics2D) graphics.create();
 
         // Paint the grid of tiles.
         g.setFont(tileFont);
@@ -319,21 +349,12 @@ public class SymbolBoard extends JPanel {
         for (int x = 0; x < gridWidth; x++) {
             for (int y = 0; y < gridHeight; y++) {
                 Symbol symbol = getSymbol(x, y);
-
-                int rx = x * (tileSize + widthGL) + widthGL;
-                int ry = y * (tileSize + widthGL) + widthGL;
-                g.setColor(symbol.bg);
-                g.fillRect(rx, ry, tileSize, tileSize);
-
-                int tx = rx + tileSize / 2 - tileFontWidth / 2;
-                int ty = ry + tileFontAscent;
-                g.setColor(symbol.fg);
-                g.drawString(symbol.sprite + "", tx, ty);
+                drawTile(g, x, y, symbol.bg, symbol.fg, symbol.sprite);
             }
         }
 
         // Paint the cursor.
-        if (!pauseInput) {
+        if (!pauseInput && !backgroundComponentMode) {
             int cx = gameCursor.x() * (tileSize + 2) + 1;
             int cy = gameCursor.y() * (tileSize + 2) + 1;
             int cw = tileSize + 2;
@@ -397,6 +418,12 @@ public class SymbolBoard extends JPanel {
             Symbol symbol = getSymbol(selectedTile);
             g.setColor(symbol.fg);
             g.drawRect(sx, sy, sw, sh);
+        }
+
+        // Darken the board if in background component mode.
+        if (backgroundComponentMode) {
+            g.setColor(Colors.BLACK_TRANSPARENT_HALF);
+            g.fillRect(0, 0, widthPx, heightPx);
         }
 
         // Paint the adjacency set.
@@ -465,7 +492,7 @@ public class SymbolBoard extends JPanel {
     }
 
     public void setGameCursor(Position gameCursor) {
-        if (!this.gameCursor.equals(gameCursor)) {
+        if (this.gameCursor == null || !this.gameCursor.equals(gameCursor)) {
             this.gameCursor = gameCursor;
             checkAdjacency(this.gameCursor);
 
@@ -623,7 +650,6 @@ public class SymbolBoard extends JPanel {
 
         // Fill again if board is empty.
         if (remainingTiles == 0) {
-            sleep(finishFillGridSleepMillis);
             fillWithTiles();
         }
     }
@@ -772,5 +798,26 @@ public class SymbolBoard extends JPanel {
         }
 
         return updated;
+    }
+
+    public void backgroundComponentMode() {
+        backgroundComponentMode = true;
+        skipSleepAnimation = true;
+        pauseInput = true;
+        removeMouseListener(mouseListener);
+        removeMouseMotionListener(mouseListener);
+    }
+
+    public void showMouseCursor() {
+        Cursor defaultMouseCursor = Cursor.getDefaultCursor();
+        setCursor(defaultMouseCursor);
+    }
+
+    public void hideMouseCursor() {
+        setCursor(blankMouseCursor);
+    }
+
+    public Font getTileFont() {
+        return tileFont;
     }
 }
